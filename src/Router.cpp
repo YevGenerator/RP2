@@ -4,13 +4,20 @@
 #include "../include/NodeStore.hpp"
 #include "../include/NetworkConfig.hpp"
 
+Router::Router(zmq::context_t *context, std::shared_ptr<NodeStore> store)
+    : zmq_context(context),
+      nodeStore(std::move(store)),
+      task_sender(*zmq_context, zmq::socket_type::push),
+      output_receiver(*zmq_context, zmq::socket_type::pull) {
+}
+
 void Router::run() {
     try {
         output_receiver.bind(NetworkConfig::OutputQueue.data());
-        Printer::print_safe("[Router] Прив'язано output_receiver до " + std::string(NetworkConfig::OutputQueue)); // <-- Лог 1
+        Printer::print_safe("[Router] Прив'язано output_receiver до " + std::string(NetworkConfig::OutputQueue));
 
-        task_sender.connect(NetworkConfig::TaskQueue.data());
-        Printer::print_safe("[Router] Прив'язано task_sender до " + std::string(NetworkConfig::TaskQueue)); // <-- Лог 2
+        task_sender.bind(NetworkConfig::TaskQueue.data());
+        Printer::print_safe("[Router] Прив'язано task_sender до " + std::string(NetworkConfig::TaskQueue));
 
         Printer::print_safe("[Router] Запущено. Слухаю " + std::string(NetworkConfig::OutputQueue));
         while (true) {
@@ -28,9 +35,11 @@ void Router::run() {
                 this->task_sender.send(out_msg, zmq::send_flags::none);
             }
         }
-    } catch (const zmq::error_t& e) { // Ловимо помилки ZMQ
+    } catch (const zmq::error_t &e) {
+        // Ловимо помилки ZMQ
         Printer::print_safe("[Router] ZMQ Помилка: " + std::string(e.what()) + " (" + std::to_string(e.num()) + ")");
-    } catch (const std::exception& e) { // Ловимо інші помилки
+    } catch (const std::exception &e) {
+        // Ловимо інші помилки
         Printer::print_safe("[Router] Помилка: " + std::string(e.what()));
     }
 }

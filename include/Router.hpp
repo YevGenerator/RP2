@@ -6,12 +6,7 @@ class NodeStore;
 
 class Router {
 public:
-    explicit Router(zmq::context_t *context, std::shared_ptr<NodeStore> store)
-        : zmq_context(context),
-          nodeStore(std::move(store)),
-          task_sender(*zmq_context, zmq::socket_type::push),
-          output_receiver(*zmq_context, zmq::socket_type::pull) {
-    }
+    explicit Router(zmq::context_t *context, std::shared_ptr<NodeStore> store);
 
     void run();
 

@@ -4,6 +4,10 @@
 #include "../include/NodeStore.hpp"
 #include "../include/NetworkConfig.hpp"
 
+Worker::Worker(zmq::context_t *context, std::shared_ptr<NodeStore> store) : zmq_context(context),
+                                                                            nodeStore(std::move(store)) {
+}
+
 MessageReceive Worker::readMessage(zmq::socket_t &task_receiver) {
     zmq::message_t zmq_message;
     Printer::print_safe("[Worker]: чекаємо дані на recv...");
@@ -22,7 +26,7 @@ void Worker::run() const {
     Printer::print_safe("[Worker] Запущено");
     zmq::socket_t task_receiver(*this->zmq_context, zmq::socket_type::pull);
     try {
-        task_receiver.bind(NetworkConfig::TaskQueue.data());
+        task_receiver.connect(NetworkConfig::TaskQueue.data());
         Printer::print_safe("[Worker]: підключено до " + std::string(NetworkConfig::TaskQueue));
 
         while (true) {

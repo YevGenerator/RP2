@@ -7,7 +7,6 @@
 #include "include/NetworkManager.hpp"
 #include "include/Printer.hpp"
 #include "windows.h"
-#include <locale.h>
 
 void processCommand(const std::string& line, NetworkManager& manager) {
     std::stringstream ss(line);
@@ -57,14 +56,14 @@ int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
     NetworkManager manager;
-    manager.run_async(1);
+    manager.run_async(2);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     Printer::print_safe("Система запущена. Введіть 'help' для списку команд.");
 
     std::string line;
     while (true) {
-        std::cout << "> "; // Запрошення до вводу
+        std::cout << "> ";
         if (!std::getline(std::cin, line) || line == "exit") {
             break;
         }

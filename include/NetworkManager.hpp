@@ -12,13 +12,7 @@ class SensorNode;
 
 class NetworkManager {
 public:
-    NetworkManager()
-        : zmq_context(1),
-          nodeStore(std::make_shared<NodeStore>()),
-          cli_task_sender(zmq_context, zmq::socket_type::push) {
-
-        cli_task_sender.connect(NetworkConfig::TaskQueue.data());
-    }
+    NetworkManager();
 
     ~NetworkManager() {
         // TODO: Треба реалізувати коректну зупинку потоків
