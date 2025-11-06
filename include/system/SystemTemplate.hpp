@@ -16,7 +16,9 @@ namespace NodeSystem {
         ~SystemTemplate() {
             // TODO: Треба реалізувати коректну зупинку потоків
         }
+
         int get_id() const;
+
         void run_async(int num_workers = 1);
 
         std::shared_ptr<Node> createNode(NodeId id);
@@ -27,9 +29,27 @@ namespace NodeSystem {
 
         void createLevel(int level);
 
+        void setId(const int id) {
+            this->id = id;
+        }
+
+        int getId() const {
+            return this->id;
+        }
+
+        void setWorkers(const int workers) {
+            this->workers = workers;
+        }
+
+        int getWorkers() const {
+            return this->workers;
+        }
+
     private:
-        void setupNodeCallback(const std::shared_ptr<Node>& node);
+        void setupNodeCallback(const std::shared_ptr<Node> &node);
+
         int id;
+        int workers;
         zmq::context_t zmq_context;
         std::shared_ptr<NodeStore> nodeStore;
         std::unique_ptr<Router> router;
