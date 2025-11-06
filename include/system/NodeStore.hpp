@@ -27,12 +27,12 @@ namespace NodeSystem {
         std::shared_ptr<Node> createLevel(int level);
 
         std::shared_ptr<const std::vector<NodeId>> getRoutes(NodeId from);
-
+        std::shared_ptr<Node> finalNode;
     private:
         std::mutex nodes_mutex;
         std::mutex routes_mutex;
         std::unordered_map<NodeId, std::shared_ptr<Node> > nodes;
         std::unordered_map<NodeId, std::shared_ptr<std::vector<NodeId> > > routes;
-        std::shared_ptr<Node> finalNode;
+
     };
 }

@@ -27,8 +27,8 @@ namespace NodeSystem {
         Printer::print_safe("[Worker] Запущено");
         zmq::socket_t task_receiver(*this->zmq_context, zmq::socket_type::pull);
         try {
-            task_receiver.connect(NetworkConfig::TaskQueueOut.data());
-            Printer::print_safe("[Worker]: підключено до " + std::string(NetworkConfig::TaskQueueOut));
+            task_receiver.connect(this->taskOutQueue());
+            Printer::print_safe("[Worker]: підключено до " + std::string(this->taskOutQueue()));
 
             while (true) {
                 auto message = readMessage(task_receiver);

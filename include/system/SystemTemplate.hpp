@@ -4,6 +4,7 @@
 #include <memory>
 #include <zmq_addon.hpp>
 
+#include "NetworkConfig.hpp"
 #include "NodeStore.hpp"
 
 #include "Router.hpp"
@@ -11,7 +12,7 @@
 namespace NodeSystem {
     class SystemTemplate {
     public:
-        SystemTemplate(int id = 0);
+        SystemTemplate(int id, zmq::context_t* zmq_context);
 
         ~SystemTemplate() {
             // TODO: Треба реалізувати коректну зупинку потоків
@@ -19,11 +20,13 @@ namespace NodeSystem {
 
         int get_id() const;
 
-        void run_async(int num_workers = 1);
+        void run_async();
 
         std::shared_ptr<Node> createNode(NodeId id);
 
         void bind(NodeId from, NodeId to) const;
+
+        void bindToSystem(const SystemTemplate &system, int targetNodeId) const;
 
         void triggerSensor(NodeId sensorId);
 
@@ -45,12 +48,24 @@ namespace NodeSystem {
             return this->workers;
         }
 
+        std::string queueTaskIn() const {
+            return std::string(NetworkConfig::TaskQueueIn) + "_" + std::to_string(this->id);
+        }
+
+        std::string queueTaskOut() const {
+            return std::string(NetworkConfig::TaskQueueOut) + "_" + std::to_string(this->id);
+        }
+
+        std::string queueOutput() const {
+            return std::string(NetworkConfig::OutputQueue) + "_" + std::to_string(this->id);
+        }
+
     private:
         void setupNodeCallback(const std::shared_ptr<Node> &node);
 
         int id;
         int workers;
-        zmq::context_t zmq_context;
+        zmq::context_t* zmq_context;
         std::shared_ptr<NodeStore> nodeStore;
         std::unique_ptr<Router> router;
         std::thread router_thread;

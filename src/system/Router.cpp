@@ -2,7 +2,6 @@
 #include "../../include/Printer.hpp"
 #include "../../include/system/Message.hpp"
 #include "../../include/system/NodeStore.hpp"
-#include "../../include/system/NetworkConfig.hpp"
 
 
 namespace NodeSystem {
@@ -15,13 +14,12 @@ namespace NodeSystem {
 
     void Router::run() {
         try {
-            output_receiver.bind(NetworkConfig::OutputQueue.data());
-            Printer::print_safe("[Router] Прив'язано output_receiver до " + std::string(NetworkConfig::OutputQueue));
+            output_receiver.bind(outputQueue());
+            Printer::print_safe("[Router] Прив'язано output_receiver до " +outputQueue());
 
-            task_sender.connect(NetworkConfig::TaskQueueIn.data());
-            Printer::print_safe("[Router] Підключено task_sender до " + std::string(NetworkConfig::TaskQueueIn));
+            task_sender.connect(taskInQueue());
+            Printer::print_safe("[Router] Підключено task_sender до " + taskInQueue());
 
-            Printer::print_safe("[Router] Запущено. Слухаю " + std::string(NetworkConfig::OutputQueue));
             while (true) {
                 zmq::message_t in_msg;
                 if (!output_receiver.recv(in_msg)) continue;

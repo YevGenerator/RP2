@@ -9,7 +9,8 @@ namespace NodeSystem {
         explicit Router(zmq::context_t *context, std::shared_ptr<NodeStore> store);
 
         void run();
-
+        std::function<std::string()> outputQueue;
+        std::function<std::string()> taskInQueue;
     private:
         zmq::context_t *zmq_context = nullptr;
         std::shared_ptr<NodeStore> nodeStore;

@@ -5,10 +5,10 @@
 #include "../../include/system/NetworkConfig.hpp"
 
 namespace NodeSystem {
-    SystemTemplate::SystemTemplate(const int id)
-        : zmq_context(1),
-          nodeStore(std::make_shared<NodeStore>()),
-          cli_task_sender(zmq_context, zmq::socket_type::push) {
+    SystemTemplate::SystemTemplate(const int id, zmq::context_t *zmq_context)
+        : nodeStore(std::make_shared<NodeStore>()),
+          cli_task_sender(*zmq_context, zmq::socket_type::push) {
+        this->zmq_context = zmq_context;
         this->id = id;
     }
 
@@ -16,19 +16,18 @@ namespace NodeSystem {
         return this->id;
     }
 
-    void SystemTemplate::run_async(int num_workers) {
+    void SystemTemplate::run_async() {
         Printer::print_safe("[Manager] Запуск проксі черги завдань...");
 
         auto proxy_runner = [this]() {
             try {
-                zmq::socket_t frontend(this->zmq_context, zmq::socket_type::pull);
-                frontend.bind(NetworkConfig::TaskQueueIn.data());
+                zmq::socket_t frontend(*this->zmq_context, zmq::socket_type::pull);
+                frontend.bind(this->queueTaskIn());
 
-                zmq::socket_t backend(this->zmq_context, zmq::socket_type::push);
-                backend.bind(NetworkConfig::TaskQueueOut.data());
+                zmq::socket_t backend(*this->zmq_context, zmq::socket_type::push);
+                backend.bind(this->queueTaskOut());
 
-                Printer::print_safe("[Proxy] Проксі запущено. Слухаю " + std::string(NetworkConfig::TaskQueueIn) +
-                                    ", відправляю на " + std::string(NetworkConfig::TaskQueueOut));
+                Printer::print_startedProxy(*this);
 
                 zmq::proxy(frontend, backend);
             } catch (const std::exception &e) {
@@ -39,19 +38,22 @@ namespace NodeSystem {
         this->proxy_thread = std::thread(proxy_runner);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         try {
-            cli_task_sender.connect(NetworkConfig::TaskQueueIn.data());
+            cli_task_sender.connect(this->queueTaskIn());
             Printer::print_safe("[Manager] CLI Sender підключено до " + std::string(NetworkConfig::TaskQueueIn));
         } catch (const zmq::error_t &e) {
             Printer::print_safe("[Manager] Помилка підключення CLI Sender: " + std::string(e.what()));
         }
 
         Printer::print_safe("[Manager] Запуск Router...");
-        this->router = std::make_unique<Router>(&zmq_context, nodeStore);
+        this->router = std::make_unique<Router>(zmq_context, nodeStore);
+        router->outputQueue = [this]() { return this->queueOutput(); };
+        router->taskInQueue = [this]() { return this->queueTaskIn(); };
         this->router_thread = std::thread(&Router::run, this->router.get());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        for (int i = 0; i < num_workers; ++i) {
-            auto worker_ptr = new Worker(&zmq_context, nodeStore);
+        for (int i = 0; i < this->workers; ++i) {
+            auto worker_ptr = new Worker(zmq_context, nodeStore);
+            worker_ptr->taskOutQueue = [this]() { return this->queueTaskOut(); };
             worker_threads.emplace_back(&Worker::run, worker_ptr);
         }
 
@@ -69,6 +71,19 @@ namespace NodeSystem {
 
     void SystemTemplate::bind(const NodeId from, const NodeId to) const {
         nodeStore->bind(from, to);
+    }
+
+    void SystemTemplate::bindToSystem(const SystemTemplate &system, int targetNodeId) const {
+        auto sender_ptr = std::make_shared<zmq::socket_t>(*system.zmq_context, zmq::socket_type::push);
+        sender_ptr->connect(system.queueTaskIn());
+        this->nodeStore->finalNode->OnRecalculated =
+                [sender = sender_ptr, target = targetNodeId](const MessageSend &message) {
+                    MessageReceive task{message.senderId, {0, target}, message.data};
+
+                    zmq::message_t zmq_msg(sizeof(MessageReceive));
+                    memcpy(zmq_msg.data(), &task, sizeof(MessageReceive));
+                    sender->send(zmq_msg, zmq::send_flags::none);
+                };
     }
 
     void SystemTemplate::triggerSensor(NodeId sensorId) {
@@ -94,14 +109,14 @@ namespace NodeSystem {
     }
 
     void SystemTemplate::setupNodeCallback(const std::shared_ptr<Node> &node) {
-        auto sender_ptr = std::make_shared<zmq::socket_t>(this->zmq_context, zmq::socket_type::push);
-        sender_ptr->connect(NetworkConfig::OutputQueue.data());
+        auto sender_ptr = std::make_shared<zmq::socket_t>(*this->zmq_context, zmq::socket_type::push);
+        sender_ptr->connect(this->queueOutput());
 
         node->OnRecalculated =
                 [sender = sender_ptr](const MessageSend &message) {
                     zmq::message_t zmq_msg(sizeof(MessageSend));
                     memcpy(zmq_msg.data(), &message, sizeof(MessageSend));
                     sender->send(zmq_msg, zmq::send_flags::none);
-        };
+                };
     }
 }

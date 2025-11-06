@@ -26,7 +26,9 @@ add_executable(RP2 main.cpp
         include/rpdefParser/SystemConfig.hpp
         include/rpdefParser/RpdefSymbolHasher.hpp
         include/rpdefParser/HashMap.hpp
-        tests/test_parser.cpp
+        src/system/SensorManager.cpp
+        include/system/SensorManager.hpp
+        include/system/SensorManager.hpp
 )
 find_package(ZeroMQ CONFIG REQUIRED)
 target_link_libraries(RP2 PRIVATE libzmq)

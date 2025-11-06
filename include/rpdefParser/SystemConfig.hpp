@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "../system/NodeId.hpp"
+#include "../system/SystemTemplate.hpp"
 
 namespace RpdefConfig {
     struct SystemConfig {
