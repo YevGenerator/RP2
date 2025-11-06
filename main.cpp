@@ -4,11 +4,11 @@
 #include <thread>
 #include <chrono>
 
-#include "include/NetworkManager.hpp"
+#include "include/system/SystemTemplate.hpp"
 #include "include/Printer.hpp"
 #include "windows.h"
 
-void processCommand(const std::string& line, NetworkManager& manager) {
+void processCommand(const std::string& line, SystemTemplate& manager) {
     std::stringstream ss(line);
     std::string cmd;
     ss >> cmd;
@@ -55,7 +55,7 @@ void processCommand(const std::string& line, NetworkManager& manager) {
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
-    NetworkManager manager;
+    SystemTemplate manager;
     manager.run_async(2);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

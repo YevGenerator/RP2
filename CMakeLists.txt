@@ -4,24 +4,29 @@ project(RP2)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(RP2 main.cpp
-        include/NodeId.hpp
-        include/Node.hpp
+        include/System/NodeId.hpp
+        include/System/Node.hpp
         include/Printer.hpp
-        include/Message.hpp
-        include/DataSlot.hpp
-        include/SensorNode.hpp
-        include/Worker.hpp
-        include/NodeStore.hpp
-        include/Router.hpp
-        include/NetworkManager.hpp
-        include/NetworkConfig.hpp
+        include/System/Message.hpp
+        include/System/DataSlot.hpp
+        include/System/Worker.hpp
+        include/System/NodeStore.hpp
+        include/System/Router.hpp
+        include/System/SystemTemplate.hpp
+        include/System/NetworkConfig.hpp
         src/Printer.cpp
-        src/Node.cpp
-        src/NodeId.cpp
-        src/SensorNode.cpp
-        src/NodeStore.cpp
-        src/Worker.cpp
-        src/Router.cpp
-        src/NetworkManager.cpp)
+        src/system/Node.cpp
+        src/system/NodeId.cpp
+        src/system/NodeStore.cpp
+        src/system/Worker.cpp
+        src/system/Router.cpp
+        src/system/SystemTemplate.cpp
+        src/parser/ConfigParser.cpp
+        include/rpdefParser/ConfigParser.hpp
+        include/rpdefParser/SystemConfig.hpp
+        include/rpdefParser/RpdefSymbolHasher.hpp
+        include/rpdefParser/HashMap.hpp
+        tests/test_parser.cpp
+)
 find_package(ZeroMQ CONFIG REQUIRED)
 target_link_libraries(RP2 PRIVATE libzmq)
