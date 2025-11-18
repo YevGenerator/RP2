@@ -19,22 +19,19 @@ namespace NodeSystem {
             zmq::socket_t *socket; // Вказівник на сокет для цільової системи
         };
 
-        zmq::context_t *m_context; // Спільний контекст
+        zmq::context_t *m_context;
         std::thread m_thread;
         std::atomic<bool> m_running;
 
         std::vector<VirtualSensor> m_sensors;
         std::mutex m_sensors_mutex;
 
-        // Один сокет-відправник на кожну унікальну адресу системи
         std::map<std::string, std::unique_ptr<zmq::socket_t> > m_senders;
 
-        // Генератори випадкових чисел
         std::mt19937 m_rng;
         std::uniform_real_distribution<> m_val_dist;
         std::uniform_int_distribution<> m_time_dist_ms;
 
-        // Допоміжна функція: отримує або створює сокет для адреси
         zmq::socket_t *getSocketForAddress(const std::string &addr) {
             if (m_senders.find(addr) == m_senders.end()) {
                 Printer::print_safe("[SensorManager] Створення сокету для " + addr);
@@ -52,7 +49,6 @@ namespace NodeSystem {
                 std::lock_guard lock(m_sensors_mutex);
                 for (auto &sensor: m_sensors) {
                     if (now >= sensor.next_fire_time) {
-                        // 1. Час спрацювати
                         double value = m_val_dist(m_rng);
                         MessageReceive task{sensor.sensorId, sensor.targetNodeId, value};
 
@@ -65,13 +61,11 @@ namespace NodeSystem {
                             Printer::print_safe("[SensorManager] Помилка ZMQ: " + std::string(e.what()));
                         }
 
-                        // 2. Перепланувати
                         int sleep_ms = m_time_dist_ms(m_rng);
                         sensor.next_fire_time = now + std::chrono::milliseconds(sleep_ms);
                     }
                 }
 
-                // Спимо, щоб не навантажувати CPU
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
